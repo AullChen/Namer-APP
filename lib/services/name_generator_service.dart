@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'package:english_words/english_words.dart';
 import 'package:flutter_application_1/services/semantic_parser_service.dart';
+import 'naming_format_service.dart';
+import 'dynamic_length_service.dart';
+import 'advanced_ai_service.dart';
 
 /// 智能名称生成服务
 /// 集成了自然语言处理和上下文理解功能的AI模型
@@ -100,12 +103,58 @@ class NameGeneratorService {
     return scoredCandidates.isNotEmpty ? scoredCandidates.first.wordPair : generateRandomPair();
   }
   
-  /// 生成多样化候选名称
-  List<WordPair> generateCandidates({
+  /// 生成多样化候选名称 - 全面升级版本
+  Future<List<WordPair>> generateCandidates({
     int count = 5,
     Map<String, dynamic>? preferences,
     String? keyword,
-  }) {
+    String format = 'default',
+    String lengthCategory = 'auto',
+  }) async {
+    try {
+      // 使用先进AI服务生成高质量名称
+      List<String> aiGeneratedNames = await AdvancedAIService.generateAdvancedNames(
+        prompt: keyword ?? '智能名称生成',
+        count: count,
+        format: format,
+        lengthCategory: lengthCategory,
+      );
+      
+      // 转换为WordPair格式并应用格式化
+      List<WordPair> candidates = [];
+      for (String name in aiGeneratedNames) {
+        // 应用命名格式
+        String formattedName = NamingFormatService.formatName(name, format);
+        
+        // 分割为词对（如果可能）
+        List<String> parts = formattedName.split(RegExp(r'[\s_\-\.]+'));
+        if (parts.length >= 2) {
+          candidates.add(WordPair(parts[0], parts.sublist(1).join('')));
+        } else {
+          // 单词情况，生成配对词
+          WordPair randomPair = WordPair.random();
+          candidates.add(WordPair(formattedName, randomPair.second));
+        }
+      }
+      
+      // 如果AI生成失败，回退到传统方法
+      if (candidates.isEmpty) {
+        return _generateTraditionalCandidates(count, preferences, keyword);
+      }
+      
+      return candidates;
+    } catch (e) {
+      // 错误处理：回退到传统生成方法
+      return _generateTraditionalCandidates(count, preferences, keyword);
+    }
+  }
+
+  /// 传统候选名称生成方法（作为备用）
+  List<WordPair> _generateTraditionalCandidates(
+    int count,
+    Map<String, dynamic>? preferences,
+    String? keyword,
+  ) {
     Set<WordPair> uniqueCandidates = {};
     
     while (uniqueCandidates.length < count) {
@@ -123,6 +172,56 @@ class NameGeneratorService {
     }
     
     return uniqueCandidates.toList();
+  }
+
+  /// 新增：智能名称生成接口
+  static Future<List<WordPair>> generateNames({
+    required int count,
+    String? userInput,
+    String preference = 'balanced',
+    String lengthCategory = 'auto',
+    String format = 'default',
+    String style = 'modern',
+  }) async {
+    final service = NameGeneratorService();
+    
+    // 动态确定长度类别
+    String actualLengthCategory = lengthCategory;
+    if (lengthCategory == 'auto' && userInput != null && userInput.isNotEmpty) {
+      actualLengthCategory = DynamicLengthService.determineLengthCategory(userInput);
+    }
+    
+    // 构建偏好设置
+    Map<String, dynamic> preferences = {
+      'nameLength': _mapLengthCategoryToPreference(actualLengthCategory),
+      'nameStyle': style,
+      'preference': preference,
+    };
+    
+    // 生成候选名称
+    List<WordPair> candidates = await service.generateCandidates(
+      count: count,
+      preferences: preferences,
+      keyword: userInput,
+      format: format,
+      lengthCategory: actualLengthCategory,
+    );
+    
+    return candidates;
+  }
+
+  /// 长度类别映射到传统偏好
+  static String _mapLengthCategoryToPreference(String lengthCategory) {
+    switch (lengthCategory) {
+      case 'short':
+        return 'short';
+      case 'medium':
+        return 'medium';
+      case 'long':
+        return 'long';
+      default:
+        return 'medium';
+    }
   }
   
   /// 预处理关键词 - 清理和标准化输入

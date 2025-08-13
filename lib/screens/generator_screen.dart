@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application_1/services/app_state.dart';
+import 'package:flutter_application_1/services/naming_format_service.dart';
+import 'package:flutter_application_1/services/dynamic_length_service.dart';
 import 'package:flutter_application_1/widgets/candidate_list.dart';
 import 'package:flutter_application_1/widgets/category_selector.dart';
 
-enum NamingStyle {
-  singleWord('单个单词'),
-  hyphenated('连字符连接'),
-  camelCase('驼峰命名'),
-  pascalCase('帕斯卡命名'),
-  snakeCase('下划线连接'),
-  dotCase('点号连接');
+enum LengthCategory {
+  auto('智能调整'),
+  short('简短精炼'),
+  medium('适中平衡'),
+  long('详细描述');
 
-  const NamingStyle(this.displayName);
+  const LengthCategory(this.displayName);
   final String displayName;
 }
 
@@ -26,8 +26,8 @@ class GeneratorScreen extends ConsumerStatefulWidget {
 class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _showCandidates = false;
-  NamingStyle _selectedNamingStyle = NamingStyle.hyphenated;
-  int _selectedLength = 2;
+  String _selectedFormat = 'kebab-case';
+  LengthCategory _selectedLengthCategory = LengthCategory.auto;
   String _selectedStyle = 'modern';
 
   @override
@@ -36,39 +36,32 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
     super.dispose();
   }
 
-  void _generateName() {
+  void _generateName() async {
     final keyword = _searchController.text.trim();
     if (keyword.isNotEmpty) {
       ref.read(searchKeywordProvider.notifier).state = keyword;
     }
     
     // 更新用户偏好设置
-    ref.read(preferencesProvider.notifier).updatePreference('preferredLength', _selectedLength);
+    ref.read(preferencesProvider.notifier).updatePreference('preferredFormat', _selectedFormat);
+    ref.read(preferencesProvider.notifier).updatePreference('preferredLengthCategory', _selectedLengthCategory.name);
     ref.read(preferencesProvider.notifier).updatePreference('preferredStyle', _selectedStyle);
-    ref.read(preferencesProvider.notifier).updatePreference('namingStyle', _selectedNamingStyle.name);
     
+    // 使用基础生成方法
     ref.read(currentWordPairProvider.notifier).getNext();
     ref.read(candidatesProvider.notifier).generateCandidates();
   }
 
   String _formatNameByStyle(String name) {
-    final parts = name.split(' ');
-    switch (_selectedNamingStyle) {
-      case NamingStyle.singleWord:
-        return parts.join('').toLowerCase();
-      case NamingStyle.hyphenated:
-        return parts.join('-').toLowerCase();
-      case NamingStyle.camelCase:
-        if (parts.isEmpty) return name;
-        return parts.first.toLowerCase() + 
-               parts.skip(1).map((e) => e[0].toUpperCase() + e.substring(1).toLowerCase()).join('');
-      case NamingStyle.pascalCase:
-        return parts.map((e) => e[0].toUpperCase() + e.substring(1).toLowerCase()).join('');
-      case NamingStyle.snakeCase:
-        return parts.join('_').toLowerCase();
-      case NamingStyle.dotCase:
-        return parts.join('.').toLowerCase();
+    return NamingFormatService.formatName(name, _selectedFormat);
+  }
+
+  String _getLengthDescription() {
+    if (_selectedLengthCategory == LengthCategory.auto && _searchController.text.isNotEmpty) {
+      String autoCategory = DynamicLengthService.determineLengthCategory(_searchController.text);
+      return '${_selectedLengthCategory.displayName} (${DynamicLengthService.getLengthDescription(autoCategory)})';
     }
+    return _selectedLengthCategory.displayName;
   }
 
   @override
@@ -141,6 +134,7 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
                             fillColor: theme.colorScheme.surface,
                           ),
                           onSubmitted: (_) => _generateName(),
+                          onChanged: (_) => setState(() {}), // 触发长度描述更新
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -183,9 +177,9 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // 命名方式选择
+                  // 命名格式选择
                   Text(
-                    '命名方式',
+                    '命名格式',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -194,14 +188,14 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: NamingStyle.values.map((style) {
-                      final isSelected = _selectedNamingStyle == style;
+                    children: NamingFormatService.getSupportedFormats().map((format) {
+                      final isSelected = _selectedFormat == format;
                       return FilterChip(
-                        label: Text(style.displayName),
+                        label: Text(format),
                         selected: isSelected,
                         onSelected: (selected) {
                           setState(() {
-                            _selectedNamingStyle = style;
+                            _selectedFormat = format;
                           });
                         },
                         backgroundColor: theme.colorScheme.surface,
@@ -226,8 +220,8 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            DropdownButtonFormField<int>(
-                              value: _selectedLength,
+                            DropdownButtonFormField<LengthCategory>(
+                              value: _selectedLengthCategory,
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -237,14 +231,15 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
                                   vertical: 8,
                                 ),
                               ),
-                              items: const [
-                                DropdownMenuItem(value: 1, child: Text('短 (1个词)')),
-                                DropdownMenuItem(value: 2, child: Text('中 (2个词)')),
-                                DropdownMenuItem(value: 3, child: Text('长 (3个词)')),
-                              ],
+                              items: LengthCategory.values.map((category) {
+                                return DropdownMenuItem(
+                                  value: category,
+                                  child: Text(_getLengthDescription()),
+                                );
+                              }).toList(),
                               onChanged: (value) {
                                 setState(() {
-                                  _selectedLength = value ?? 2;
+                                  _selectedLengthCategory = value ?? LengthCategory.auto;
                                 });
                               },
                             ),
@@ -291,6 +286,36 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
                       ),
                     ],
                   ),
+                  
+                  // 格式说明
+                  if (_selectedFormat != 'default') ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              NamingFormatService.getFormatDescription(_selectedFormat),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
