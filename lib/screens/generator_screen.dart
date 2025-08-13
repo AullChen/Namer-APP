@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application_1/services/app_state.dart';
-import 'package:flutter_application_1/widgets/big_card.dart';
 import 'package:flutter_application_1/widgets/candidate_list.dart';
 import 'package:flutter_application_1/widgets/category_selector.dart';
+
+enum NamingStyle {
+  singleWord('单个单词'),
+  hyphenated('连字符连接'),
+  camelCase('驼峰命名'),
+  pascalCase('帕斯卡命名'),
+  snakeCase('下划线连接'),
+  dotCase('点号连接');
+
+  const NamingStyle(this.displayName);
+  final String displayName;
+}
 
 class GeneratorScreen extends ConsumerStatefulWidget {
   const GeneratorScreen({Key? key}) : super(key: key);
@@ -15,6 +26,9 @@ class GeneratorScreen extends ConsumerStatefulWidget {
 class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _showCandidates = false;
+  NamingStyle _selectedNamingStyle = NamingStyle.hyphenated;
+  int _selectedLength = 2;
+  String _selectedStyle = 'modern';
 
   @override
   void dispose() {
@@ -22,119 +36,472 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
     super.dispose();
   }
 
+  void _generateName() {
+    final keyword = _searchController.text.trim();
+    if (keyword.isNotEmpty) {
+      ref.read(searchKeywordProvider.notifier).state = keyword;
+    }
+    
+    // 更新用户偏好设置
+    ref.read(preferencesProvider.notifier).updatePreference('preferredLength', _selectedLength);
+    ref.read(preferencesProvider.notifier).updatePreference('preferredStyle', _selectedStyle);
+    ref.read(preferencesProvider.notifier).updatePreference('namingStyle', _selectedNamingStyle.name);
+    
+    ref.read(currentWordPairProvider.notifier).getNext();
+    ref.read(candidatesProvider.notifier).generateCandidates();
+  }
+
+  String _formatNameByStyle(String name) {
+    final parts = name.split(' ');
+    switch (_selectedNamingStyle) {
+      case NamingStyle.singleWord:
+        return parts.join('').toLowerCase();
+      case NamingStyle.hyphenated:
+        return parts.join('-').toLowerCase();
+      case NamingStyle.camelCase:
+        if (parts.isEmpty) return name;
+        return parts.first.toLowerCase() + 
+               parts.skip(1).map((e) => e[0].toUpperCase() + e.substring(1).toLowerCase()).join('');
+      case NamingStyle.pascalCase:
+        return parts.map((e) => e[0].toUpperCase() + e.substring(1).toLowerCase()).join('');
+      case NamingStyle.snakeCase:
+        return parts.join('_').toLowerCase();
+      case NamingStyle.dotCase:
+        return parts.join('.').toLowerCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentPair = ref.watch(currentWordPairProvider);
     final favorites = ref.watch(favoritesProvider);
     final isFavorite = favorites.any((item) => item.id == currentPair.id);
+    final theme = Theme.of(context);
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 16),
-          Text(
-            '智能名称生成器',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 24),
-
-          // 搜索框
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: '输入关键词生成相关名称',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    ref.read(searchKeywordProvider.notifier).state = '';
-                    ref.read(candidatesProvider.notifier).generateCandidates();
-                  },
+          // 标题
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.auto_awesome,
+                  size: 32,
+                  color: theme.colorScheme.primary,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                const SizedBox(height: 8),
+                Text(
+                  '智能名称生成器',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
-              ),
-              onSubmitted: (value) {
-                ref.read(searchKeywordProvider.notifier).state = value;
-                ref.read(currentWordPairProvider.notifier).getNext();
-                ref.read(candidatesProvider.notifier).generateCandidates();
-              },
+                Text(
+                  '为您的项目生成完美的名称',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 24),
-
-          // 当前单词卡片
-          BigCard(pair: currentPair.wordPair),
-          const SizedBox(height: 16),
-
-          // 分类选择器
-          if (isFavorite)
-            CategorySelector(
-              selectedCategories: currentPair.categories,
-              onCategoriesChanged: (categories) {
-                ref
-                    .read(currentWordPairProvider.notifier)
-                    .updateCategories(categories);
-              },
+          
+          // 搜索框和生成按钮
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '输入提示词',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: '例如：科技产品、游戏角色、项目代号...',
+                            prefixIcon: const Icon(Icons.lightbulb_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                          ),
+                          onSubmitted: (_) => _generateName(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: _generateName,
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text('生成'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          const SizedBox(height: 16),
-
-          // 操作按钮
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(currentWordPairProvider.notifier).toggleFavorite();
-                },
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : null,
-                ),
-                label: Text(isFavorite ? '取消收藏' : '收藏'),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(currentWordPairProvider.notifier).getNext();
-                },
-                child: const Text('下一个'),
-              ),
-              const SizedBox(width: 10),
-              ElevatedButton.icon(
-                onPressed: () {
-                  setState(() {
-                    _showCandidates = !_showCandidates;
-                  });
-                  if (_showCandidates) {
-                    ref.read(candidatesProvider.notifier).generateCandidates();
-                  }
-                },
-                icon: Icon(
-                    _showCandidates ? Icons.expand_less : Icons.expand_more),
-                label: Text(_showCandidates ? '隐藏候选' : '显示候选'),
-              ),
-            ],
           ),
+          
           const SizedBox(height: 16),
-
+          
+          // 生成选项
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '生成选项',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 命名方式选择
+                  Text(
+                    '命名方式',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: NamingStyle.values.map((style) {
+                      final isSelected = _selectedNamingStyle == style;
+                      return FilterChip(
+                        label: Text(style.displayName),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedNamingStyle = style;
+                          });
+                        },
+                        backgroundColor: theme.colorScheme.surface,
+                        selectedColor: theme.colorScheme.primaryContainer,
+                      );
+                    }).toList(),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // 长度和风格选择
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '名称长度',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<int>(
+                              value: _selectedLength,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 1, child: Text('短 (1个词)')),
+                                DropdownMenuItem(value: 2, child: Text('中 (2个词)')),
+                                DropdownMenuItem(value: 3, child: Text('长 (3个词)')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedLength = value ?? 2;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '命名风格',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: _selectedStyle,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'modern', child: Text('现代风格')),
+                                DropdownMenuItem(value: 'classic', child: Text('经典风格')),
+                                DropdownMenuItem(value: 'creative', child: Text('创意风格')),
+                                DropdownMenuItem(value: 'professional', child: Text('专业风格')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedStyle = value ?? 'modern';
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // 生成结果
+          Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.stars,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '生成结果',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 当前名称展示
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primaryContainer,
+                          theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '原始名称',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          currentPair.wordPair.asLowerCase,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '格式化名称',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _formatNameByStyle(currentPair.wordPair.asLowerCase),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace',
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // 分类选择器
+                  if (isFavorite) ...[
+                    CategorySelector(
+                      selectedCategories: currentPair.categories,
+                      onCategoriesChanged: (categories) {
+                        ref.read(currentWordPairProvider.notifier).updateCategories(categories);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // 操作按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ref.read(currentWordPairProvider.notifier).toggleFavorite();
+                          },
+                          icon: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite ? Colors.red : null,
+                          ),
+                          label: Text(isFavorite ? '取消收藏' : '收藏'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ref.read(currentWordPairProvider.notifier).getNext();
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('重新生成'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _showCandidates = !_showCandidates;
+                            });
+                            if (_showCandidates) {
+                              ref.read(candidatesProvider.notifier).generateCandidates();
+                            }
+                          },
+                          icon: Icon(_showCandidates ? Icons.expand_less : Icons.expand_more),
+                          label: Text(_showCandidates ? '隐藏候选' : '更多选项'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
           // 候选名称列表
-          if (_showCandidates)
-            Expanded(
-              child: CandidateList(
-                onRefresh: () {
-                  ref.read(candidatesProvider.notifier).generateCandidates();
-                },
-                onSelect: (index) {
-                  ref.read(candidatesProvider.notifier).selectCandidate(index);
-                },
+          if (_showCandidates) ...[
+            const SizedBox(height: 16),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.list_alt,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '候选名称',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 300,
+                      child: CandidateList(
+                        onRefresh: () {
+                          ref.read(candidatesProvider.notifier).generateCandidates();
+                        },
+                        onSelect: (index) {
+                          ref.read(candidatesProvider.notifier).selectCandidate(index);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ],
         ],
       ),
     );

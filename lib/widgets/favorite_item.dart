@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application_1/models/word_pair_model.dart';
+import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_application_1/services/app_state.dart';
 import 'package:flutter_application_1/widgets/category_selector.dart';
 
@@ -27,16 +27,17 @@ class _FavoriteItemState extends ConsumerState<FavoriteItem> {
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider);
-
+    
     // 获取分类名称
-    List<String> categoryNames =
-        widget.wordPairModel.categories.map((categoryId) {
-      final category = categories.firstWhere(
-        (c) => c.id == categoryId,
-        orElse: () => CategoryModel(name: '未分类'),
-      );
-      return category.name;
-    }).toList();
+    List<String> categoryNames = widget.wordPairModel.categories
+        .map((categoryId) {
+          final category = categories.firstWhere(
+            (c) => c.id == categoryId,
+            orElse: () => CategoryModel(name: '未分类'),
+          );
+          return category.name;
+        })
+        .toList();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
