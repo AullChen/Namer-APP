@@ -256,18 +256,31 @@ class CandidatesNotifier extends StateNotifier<List<WordPairModel>> {
     generateCandidates();
   }
 
-  void generateCandidates({int count = 5}) {
+  Future<void> generateCandidates({int count = 5}) async {
     final nameGenerator = _ref.read(nameGeneratorServiceProvider);
     final preferences = _ref.read(preferencesProvider);
     final keyword = _ref.read(searchKeywordProvider);
     
-    final wordPairs = nameGenerator.generateCandidates(
-      count: count,
-      preferences: preferences,
-      keyword: keyword.isNotEmpty ? keyword : null,
-    );
-    
-    state = wordPairs.map((pair) => WordPairModel(wordPair: pair)).toList();
+    try {
+      final wordPairs = await nameGenerator.generateCandidates(
+        count: count,
+        preferences: preferences,
+        keyword: keyword.isNotEmpty ? keyword : null,
+      );
+      
+      state = wordPairs.map((pair) => WordPairModel(wordPair: pair)).toList();
+    } catch (e) {
+      // 错误处理：使用基础生成方法
+      final wordPairs = <WordPair>[];
+      for (int i = 0; i < count; i++) {
+        if (keyword.isNotEmpty) {
+          wordPairs.add(nameGenerator.generateBasedOnKeyword(keyword));
+        } else {
+          wordPairs.add(nameGenerator.generateBasedOnPreferences(preferences));
+        }
+      }
+      state = wordPairs.map((pair) => WordPairModel(wordPair: pair)).toList();
+    }
   }
 
   void selectCandidate(int index) {
