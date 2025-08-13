@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:english_words/english_words.dart';
+import 'package:flutter_application_1/services/semantic_parser_service.dart';
 
 /// 智能名称生成服务
 /// 集成了自然语言处理和上下文理解功能的AI模型
 class NameGeneratorService {
   final Random _random = Random();
+  final SemanticParserService _semanticParser = SemanticParserService();
   
   // 语义词典 - 用于上下文理解
   static const Map<String, List<String>> _semanticGroups = {
@@ -65,20 +67,30 @@ class NameGeneratorService {
   WordPair generateBasedOnKeyword(String keyword) {
     if (keyword.isEmpty) return generateRandomPair();
     
+    // 使用语义解析服务分析输入
+    SemanticAnalysisResult semanticResult = _semanticParser.parseSemantics(keyword);
+    
     // 预处理关键词
     String processedKeyword = _preprocessKeyword(keyword);
     
-    // 识别语义类别
+    // 识别语义类别（结合新的语义分析结果）
     String? semanticCategory = _identifySemanticCategory(processedKeyword);
+    if (semanticResult.categories.isNotEmpty) {
+      semanticCategory = semanticResult.categories.first;
+    }
     
-    // 生成上下文相关的候选词
-    List<WordPair> rawCandidates = _generateContextualCandidates(processedKeyword, semanticCategory);
+    // 生成上下文相关的候选词（使用语义分析结果）
+    List<WordPair> rawCandidates = _generateEnhancedContextualCandidates(
+      processedKeyword, 
+      semanticCategory, 
+      semanticResult
+    );
     
-    // 应用高级相似度评分
+    // 应用高级相似度评分（集成语义权重）
     List<_ScoredWordPair> scoredCandidates = rawCandidates.map((pair) {
       return _ScoredWordPair(
         pair, 
-        _calculateAdvancedSimilarity(pair, processedKeyword, semanticCategory)
+        _calculateEnhancedSimilarity(pair, processedKeyword, semanticCategory, semanticResult)
       );
     }).toList();
     
@@ -160,6 +172,58 @@ class NameGeneratorService {
     
     return candidates;
   }
+
+  /// 生成增强的上下文相关候选词（集成语义分析）
+  List<WordPair> _generateEnhancedContextualCandidates(
+    String keyword, 
+    String? category, 
+    SemanticAnalysisResult semanticResult
+  ) {
+    List<WordPair> candidates = [];
+    
+    // 生成基础候选词
+    candidates.addAll(List.generate(20, (_) => WordPair.random()));
+    
+    // 基于语义分析结果生成候选词
+    if (semanticResult.relatedWords.isNotEmpty) {
+      for (int i = 0; i < 15; i++) {
+        String relatedWord = semanticResult.relatedWords[_random.nextInt(semanticResult.relatedWords.length)];
+        WordPair randomPair = WordPair.random();
+        
+        // 创建混合词对
+        if (_random.nextBool()) {
+          candidates.add(WordPair(relatedWord, randomPair.second));
+        } else {
+          candidates.add(WordPair(randomPair.first, relatedWord));
+        }
+      }
+    }
+    
+    // 基于网络流行语生成候选词
+    if (semanticResult.internetSlang.isNotEmpty) {
+      for (String slang in semanticResult.internetSlang.take(3)) {
+        WordPair randomPair = WordPair.random();
+        candidates.add(WordPair(slang, randomPair.second));
+      }
+    }
+    
+    // 如果识别到传统语义类别，也生成相关候选词
+    if (category != null && _semanticGroups.containsKey(category)) {
+      List<String> relatedWords = _semanticGroups[category]!;
+      for (int i = 0; i < 10; i++) {
+        String relatedWord = relatedWords[_random.nextInt(relatedWords.length)];
+        WordPair randomPair = WordPair.random();
+        
+        if (_random.nextBool()) {
+          candidates.add(WordPair(relatedWord, randomPair.second));
+        } else {
+          candidates.add(WordPair(randomPair.first, relatedWord));
+        }
+      }
+    }
+    
+    return candidates;
+  }
   
   /// 高级偏好评分系统
   int _calculateAdvancedPreferenceScore(WordPair pair, String lengthPreference, String stylePreference) {
@@ -201,6 +265,42 @@ class NameGeneratorService {
     
     // 字符相似度评分（使用编辑距离）
     score += _calculateCharacterSimilarityScore(pair, keyword);
+    
+    return score;
+  }
+
+  /// 增强的相似度计算（集成语义分析结果）
+  int _calculateEnhancedSimilarity(
+    WordPair pair, 
+    String keyword, 
+    String? category, 
+    SemanticAnalysisResult semanticResult
+  ) {
+    int score = 0;
+    
+    // 基础相似度评分
+    score += _calculateAdvancedSimilarity(pair, keyword, category);
+    
+    // 语义权重加成
+    if (semanticResult.weights.isNotEmpty) {
+      score += _calculateSemanticWeightBonus(pair, semanticResult.weights);
+    }
+    
+    // 时效信息加成
+    if (semanticResult.timeContext.isNotEmpty) {
+      score += _calculateTimeContextBonus(pair, semanticResult.timeContext);
+    }
+    
+    // 网络流行语加成
+    if (semanticResult.internetSlang.isNotEmpty) {
+      score += _calculateInternetSlangBonus(pair, semanticResult.internetSlang);
+    }
+    
+    // 情感强度加成
+    score += _calculateEmotionIntensityBonus(pair, semanticResult.emotionIntensity);
+    
+    // 置信度调整
+    score = (score * semanticResult.confidence).round();
     
     return score;
   }
@@ -517,6 +617,133 @@ class NameGeneratorService {
     // 检查是否是独特的组合（简化实现）
     return !_isCommonWord(pair.first) && !_isCommonWord(pair.second) &&
            _hasUnusualCombination(pair);
+  }
+
+  /// 语义权重加成计算
+  int _calculateSemanticWeightBonus(WordPair pair, Map<String, double> weights) {
+    int bonus = 0;
+    String combined = '${pair.first} ${pair.second}'.toLowerCase();
+    
+    // 创意权重加成
+    if (weights['creativity'] != null && weights['creativity']! > 0.7) {
+      if (_hasCreativeElements(combined)) bonus += 5;
+    }
+    
+    // 科技权重加成
+    if (weights['technology'] != null && weights['technology']! > 0.7) {
+      if (_hasTechElements(combined)) bonus += 5;
+    }
+    
+    // 商业权重加成
+    if (weights['business'] != null && weights['business']! > 0.7) {
+      if (_hasBusinessElements(combined)) bonus += 5;
+    }
+    
+    // 自然权重加成
+    if (weights['nature'] != null && weights['nature']! > 0.7) {
+      if (_hasNatureElements(combined)) bonus += 5;
+    }
+    
+    return bonus;
+  }
+
+  /// 时效信息加成计算
+  int _calculateTimeContextBonus(WordPair pair, String timeContext) {
+    int bonus = 0;
+    String combined = '${pair.first} ${pair.second}'.toLowerCase();
+    
+    switch (timeContext) {
+      case 'current':
+      case '2024':
+      case '2025':
+        if (_hasModernElements(combined)) bonus += 4;
+        break;
+      case '流行':
+        if (_hasTrendyElements(combined)) bonus += 6;
+        break;
+      case '新兴':
+        if (_hasInnovativeElements(combined)) bonus += 5;
+        break;
+      case '经典':
+        if (_hasClassicElements(combined)) bonus += 3;
+        break;
+    }
+    
+    return bonus;
+  }
+
+  /// 网络流行语加成计算
+  int _calculateInternetSlangBonus(WordPair pair, List<String> internetSlang) {
+    int bonus = 0;
+    String combined = '${pair.first} ${pair.second}'.toLowerCase();
+    
+    for (String slang in internetSlang) {
+      if (combined.contains(slang.toLowerCase())) {
+        bonus += 8; // 网络流行语匹配给予高分
+      }
+    }
+    
+    return bonus;
+  }
+
+  /// 情感强度加成计算
+  int _calculateEmotionIntensityBonus(WordPair pair, double emotionIntensity) {
+    // 根据情感强度调整分数
+    int bonus = (emotionIntensity * 10).round();
+    
+    // 如果名称本身具有强烈的情感色彩，给予额外加成
+    String combined = '${pair.first} ${pair.second}'.toLowerCase();
+    if (_hasEmotionalElements(combined)) {
+      bonus += (emotionIntensity * 5).round();
+    }
+    
+    return bonus;
+  }
+
+  // 辅助检测方法
+  bool _hasCreativeElements(String text) {
+    const creativeWords = ['art', 'design', 'creative', 'studio', 'craft', 'vision', 'inspire', 'dream', 'magic', 'spark'];
+    return creativeWords.any((word) => text.contains(word));
+  }
+
+  bool _hasTechElements(String text) {
+    const techWords = ['tech', 'digital', 'cyber', 'smart', 'ai', 'data', 'cloud', 'net', 'code', 'app'];
+    return techWords.any((word) => text.contains(word));
+  }
+
+  bool _hasBusinessElements(String text) {
+    const businessWords = ['pro', 'corp', 'biz', 'trade', 'market', 'sales', 'profit', 'growth', 'success', 'elite'];
+    return businessWords.any((word) => text.contains(word));
+  }
+
+  bool _hasNatureElements(String text) {
+    const natureWords = ['green', 'eco', 'natural', 'earth', 'forest', 'ocean', 'sky', 'sun', 'moon', 'star'];
+    return natureWords.any((word) => text.contains(word));
+  }
+
+  bool _hasModernElements(String text) {
+    const modernWords = ['next', 'future', 'advance', 'smart', 'digital', 'new', 'modern', 'fresh'];
+    return modernWords.any((word) => text.contains(word));
+  }
+
+  bool _hasTrendyElements(String text) {
+    const trendyWords = ['viral', 'trending', 'hot', 'buzz', 'hype', 'popular', 'cool', 'awesome'];
+    return trendyWords.any((word) => text.contains(word));
+  }
+
+  bool _hasInnovativeElements(String text) {
+    const innovativeWords = ['innovative', 'breakthrough', 'revolutionary', 'cutting', 'edge', 'pioneer', 'disrupt'];
+    return innovativeWords.any((word) => text.contains(word));
+  }
+
+  bool _hasClassicElements(String text) {
+    const classicWords = ['classic', 'traditional', 'timeless', 'heritage', 'vintage', 'retro', 'elegant'];
+    return classicWords.any((word) => text.contains(word));
+  }
+
+  bool _hasEmotionalElements(String text) {
+    const emotionalWords = ['love', 'joy', 'happy', 'bright', 'power', 'strong', 'peace', 'calm', 'energy', 'passion'];
+    return emotionalWords.any((word) => text.contains(word));
   }
 }
 
