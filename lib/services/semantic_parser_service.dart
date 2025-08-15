@@ -82,7 +82,6 @@ class SemanticParserService {
     }
 
     final result = SemanticAnalysisResult();
-    final lowerInput = input.toLowerCase();
     
     // 1. 识别主要语义类别
     _identifySemanticCategories(input, result);

@@ -106,4 +106,10 @@ class StorageService {
     }
     return false;
   }
+
+  // 清除所有收藏
+  Future<bool> clearFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    return await prefs.remove(_favoritesKey);
+  }
 }
