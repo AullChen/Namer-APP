@@ -1,4 +1,5 @@
-class NamingFormatService {
+/// 简化的名称格式化工具类
+class NameFormatter {
   /// 格式化名称为指定格式
   static String formatName(String name, String format) {
     // 预处理：清理输入并标准化
@@ -28,7 +29,6 @@ class NamingFormatService {
 
   /// 清理和标准化输入
   static String _cleanInput(String input) {
-    // 移除多余空格和特殊字符
     return input.trim().replaceAll(RegExp(r'\s+'), ' ');
   }
 
@@ -142,11 +142,5 @@ class NamingFormatService {
       default:
         return '原始格式';
     }
-  }
-
-  /// 验证格式是否正确应用
-  static bool validateFormat(String original, String formatted, String format) {
-    String expectedFormat = formatName(original, format);
-    return formatted == expectedFormat;
   }
 }

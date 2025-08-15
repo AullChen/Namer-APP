@@ -4,6 +4,7 @@ import 'package:flutter_application_1/models/word_pair_model.dart';
 import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_application_1/services/storage_service.dart';
 import 'package:flutter_application_1/services/name_generator_service.dart';
+import 'package:flutter_application_1/services/intelligent_naming_service.dart';
 
 // 存储服务提供者
 final storageServiceProvider = Provider<StorageService>((ref) {
@@ -13,6 +14,11 @@ final storageServiceProvider = Provider<StorageService>((ref) {
 // 名称生成服务提供者
 final nameGeneratorServiceProvider = Provider<NameGeneratorService>((ref) {
   return NameGeneratorService();
+});
+
+// 智能命名服务提供者
+final intelligentNamingServiceProvider = Provider<IntelligentNamingService>((ref) {
+  return IntelligentNamingService();
 });
 
 // 当前单词对提供者
@@ -54,7 +60,35 @@ class CurrentWordPairNotifier extends StateNotifier<WordPairModel> {
 
   CurrentWordPairNotifier(WordPairModel initialState, this._ref) : super(initialState);
 
-  void getNext() {
+  Future<void> getNext() async {
+    final keyword = _ref.read(searchKeywordProvider);
+    
+    print('🔄 CurrentWordPairNotifier.getNext() 被调用');
+    print('🔑 当前关键词: "$keyword"');
+    
+    try {
+      // 使用传统方法生成，避免WordPair构造函数问题
+      _generateTraditionalPair();
+    } catch (e) {
+      print('❌ getNext() 异常: $e');
+      // 创建一个简单的随机WordPair作为回退
+      final newPair = WordPair.random();
+      state = WordPairModel(wordPair: newPair);
+    }
+  }
+
+  // 新增：直接更新名称的方法
+  void updateWithName(String name) {
+    print('🔄 直接更新名称: $name');
+    // 使用WordPair.random()然后通过其他方式处理名称显示
+    final newPair = WordPair.random();
+    state = WordPairModel(wordPair: newPair);
+    // 同时更新搜索关键词来反映实际名称
+    _ref.read(searchKeywordProvider.notifier).state = name;
+    print('✅ 状态已更新，名称: $name');
+  }
+
+  void _generateTraditionalPair() {
     final nameGenerator = _ref.read(nameGeneratorServiceProvider);
     final preferences = _ref.read(preferencesProvider);
     final keyword = _ref.read(searchKeywordProvider);
@@ -142,6 +176,12 @@ class FavoritesNotifier extends StateNotifier<List<WordPairModel>> {
 
   List<WordPairModel> getFavoritesByCategory(String categoryId) {
     return state.where((item) => item.categories.contains(categoryId)).toList();
+  }
+
+  Future<void> clear() async {
+    final storageService = _ref.read(storageServiceProvider);
+    state = [];
+    await storageService.clearFavorites();
   }
 }
 
@@ -257,21 +297,24 @@ class CandidatesNotifier extends StateNotifier<List<WordPairModel>> {
   }
 
   Future<void> generateCandidates({int count = 5}) async {
-    final nameGenerator = _ref.read(nameGeneratorServiceProvider);
-    final preferences = _ref.read(preferencesProvider);
+    final intelligentService = _ref.read(intelligentNamingServiceProvider);
     final keyword = _ref.read(searchKeywordProvider);
     
     try {
-      final wordPairs = await nameGenerator.generateCandidates(
+      // 优先使用智能命名服务
+      final wordPairs = await intelligentService.generateWordPairs(
+        prompt: keyword.isNotEmpty ? keyword : '智能名称生成',
         count: count,
-        preferences: preferences,
-        keyword: keyword.isNotEmpty ? keyword : null,
+        useAI: true,
       );
       
       state = wordPairs.map((pair) => WordPairModel(wordPair: pair)).toList();
     } catch (e) {
-      // 错误处理：使用基础生成方法
+      // 错误处理：使用传统生成方法
+      final nameGenerator = _ref.read(nameGeneratorServiceProvider);
+      final preferences = _ref.read(preferencesProvider);
       final wordPairs = <WordPair>[];
+      
       for (int i = 0; i < count; i++) {
         if (keyword.isNotEmpty) {
           wordPairs.add(nameGenerator.generateBasedOnKeyword(keyword));

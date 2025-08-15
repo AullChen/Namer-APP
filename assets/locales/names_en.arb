@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "prefix_tech": ["Tech", "Digital", "Smart", "Innovative", "Cyber", "Data", "Cloud", "Net", "Code", "AI"],
+  "suffix_tech": ["Solutions", "Systems", "Labs", "Hub", "Works", "Core", "Engine", "Platform", "Studio", "Tech"],
+  "prefix_creative": ["Bright", "Creative", "Dynamic", "Vivid", "Artistic", "Vision", "Dream", "Magic", "Spark", "Inspire"],
+  "suffix_creative": ["Studio", "Works", "Design", "Media", "Arts", "Creative", "Vision", "Dreams", "Magic", "Spark"],
+  "prefix_business": ["Pro", "Elite", "Prime", "Success", "Growth", "Market", "Trade", "Profit", "Global", "Strategic"],
+  "suffix_business": ["Corp", "Group", "Solutions", "Partners", "Ventures", "Enterprises", "Holdings", "Capital", "Industries", "Global"],
+  "prefix_nature": ["Green", "Eco", "Natural", "Earth", "Forest", "Ocean", "Sky", "Sun", "Moon", "Star"],
+  "suffix_nature": ["Nature", "Earth", "Green", "Eco", "Forest", "Ocean", "Sky", "Sun", "Moon", "Star"]
+}

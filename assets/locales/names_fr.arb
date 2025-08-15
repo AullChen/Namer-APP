@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr",
+  "prefix_tech": ["Tech", "Digital", "Smart", "Innovant", "Cyber", "Net", "IA", "Cloud"],
+  "suffix_tech": ["Solutions", "Systèmes", "Lab", "Hub", "Tech", "Works", "Studio", "Pro"],
+  "prefix_creative": ["Brillant", "Créatif", "Dynamique", "Vif", "Art", "Design", "Style", "Moderne"],
+  "suffix_creative": ["Studio", "Œuvres", "Design", "Média", "Art", "Création", "Vision", "Rêve"],
+  "prefix_business": ["Business", "Entreprise", "Corporate", "Professionnel", "Global", "Maître", "Élite", "Premium"],
+  "suffix_business": ["Corporation", "Entreprise", "Groupe", "Compagnie", "Business", "Solutions", "Services", "Conseil"],
+  "prefix_nature": ["Naturel", "Éco", "Vert", "Terre", "Forêt", "Océan", "Ciel", "Pur"],
+  "suffix_nature": ["Nature", "Éco", "Vert", "Vie", "Monde", "Parc", "Jardin", "Forêt"],
+  "prefix_art": ["Art", "Esthétique", "Beauté", "Élégant", "Style", "Artisanat", "Fin", "Créatif"],
+  "suffix_art": ["Art", "Galerie", "Studio", "Atelier", "Artisanat", "Design", "Vision", "Œuvres"],
+  "prefix_game": ["Jeu", "Jouer", "Quête", "Aventure", "Héros", "Légende", "Épique", "Fantaisie"],
+  "suffix_game": ["Jeu", "Jouer", "Monde", "Quête", "Aventure", "Légende", "Fantaisie", "Univers"],
+  "prefix_music": ["Musique", "Son", "Rythme", "Mélodie", "Harmonie", "Beat", "Tune", "Chanson"],
+  "suffix_music": ["Musique", "Son", "Disque", "Studio", "Beat", "Mélodie", "Harmonie", "Chanson"],
+  "prefix_general": ["Smart", "Nouveau", "Pro", "Super", "Ultra", "Méga", "Meilleur", "Top"],
+  "suffix_general": ["Hub", "Lab", "Studio", "Works", "Tech", "Pro", "Maître", "Élite"]
+}

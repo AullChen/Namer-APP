@@ -1,0 +1,90 @@
+[
+  {
+    "name": "tech_name_rule",
+    "description": "Generate tech-related names",
+    "condition": "context.category == 'tech'",
+    "actions": [
+      {
+        "type": "assign",
+        "variable": "prefix",
+        "value": "random(context.resources['prefix_tech'])"
+      },
+      {
+        "type": "assign",
+        "variable": "suffix",
+        "value": "random(context.resources['suffix_tech'])"
+      },
+      {
+        "type": "assign",
+        "variable": "result",
+        "value": "context.prefix + ' ' + context.suffix"
+      }
+    ]
+  },
+  {
+    "name": "creative_name_rule",
+    "description": "Generate creative-related names",
+    "condition": "context.category == 'creative'",
+    "actions": [
+      {
+        "type": "assign",
+        "variable": "prefix",
+        "value": "random(context.resources['prefix_creative'])"
+      },
+      {
+        "type": "assign",
+        "variable": "suffix",
+        "value": "random(context.resources['suffix_creative'])"
+      },
+      {
+        "type": "assign",
+        "variable": "result",
+        "value": "context.prefix + ' ' + context.suffix"
+      }
+    ]
+  },
+  {
+    "name": "business_name_rule",
+    "description": "Generate business-related names",
+    "condition": "context.category == 'business'",
+    "actions": [
+      {
+        "type": "assign",
+        "variable": "prefix",
+        "value": "random(context.resources['prefix_business'])"
+      },
+      {
+        "type": "assign",
+        "variable": "suffix",
+        "value": "random(context.resources['suffix_business'])"
+      },
+      {
+        "type": "assign",
+        "variable": "result",
+        "value": "context.prefix + ' ' + context.suffix"
+      }
+    ]
+  },
+  {
+    "name": "nature_name_rule",
+    "description": "Generate nature-related names",
+    "condition": "context.category == 'nature'",
+    "actions": [
+      {
+        "type": "assign",
+        "variable": "prefix",
+        "value": "random(context.resources['prefix_nature'])"
+      },
+      {
+        "type": "assign",
+        "variable": "suffix",
+        "value": "random(context.resources['suffix_nature'])"
+      },
+      {
+        "type": "assign",
+        "variable": "result",
+        "value": "context.prefix + ' ' + context.suffix"
+      }
+    ]
+  }
+]
