@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter_application_1/models/word_pair_model.dart';
+import 'package:flutter_application_1/utils/name_formatter.dart';
 import 'package:flutter_application_1/models/category_model.dart';
 import 'package:flutter_application_1/services/storage_service.dart';
 import 'package:flutter_application_1/services/name_generator_service.dart';
@@ -81,32 +82,7 @@ class CurrentWordPairNotifier extends StateNotifier<WordPairModel> {
   void updateWithName(String name) {
     print('🔄 直接更新名称: $name');
 
-    WordPair toWordPair(String s) {
-      final trimmed = s.trim();
-      if (trimmed.isEmpty) {
-        return WordPair.random();
-      }
-      // 优先用分隔符切分（英文/多词情况）
-      final parts = trimmed.split(RegExp(r'[\\s_\\-]+')).where((e) => e.isNotEmpty).toList();
-      if (parts.length >= 2) {
-        final first = parts.first;
-        final second = parts.sublist(1).join('');
-        return WordPair(first, second);
-      }
-      // 中文或单词情况：长度>=4拆半，否则用占位后缀
-      if (trimmed.runes.length >= 4) {
-        final len = trimmed.runes.length;
-        final mid = (len / 2).floor();
-        final first = String.fromCharCodes(trimmed.runes.take(mid));
-        final second = String.fromCharCodes(trimmed.runes.skip(mid));
-        return WordPair(first, second);
-      } else {
-        // 短名称用固定后缀，避免随机带来不确定性
-        return WordPair(trimmed, '项目');
-      }
-    }
-
-    final newPair = toWordPair(name);
+    final newPair = NameFormatter.toWordPair(name);
     state = WordPairModel(wordPair: newPair);
 
     // 不要用生成结果污染搜索关键词
@@ -323,34 +299,9 @@ class CandidatesNotifier extends StateNotifier<List<WordPairModel>> {
     generateCandidates();
   }
 
-  // 辅助方法：将字符串转换为WordPair
-  WordPair _toWordPair(String s) {
-    final trimmed = s.trim();
-    if (trimmed.isEmpty) {
-      return WordPair('无效', '名称');
-    }
-    // 优先用分隔符切分
-    final parts = trimmed.split(RegExp(r'[\s_\-]+')).where((e) => e.isNotEmpty).toList();
-    if (parts.length >= 2) {
-      final first = parts.first;
-      final second = parts.sublist(1).join('');
-      return WordPair(first, second);
-    }
-    // 中文或单词情况
-    if (trimmed.runes.length >= 4) {
-      final len = trimmed.runes.length;
-      final mid = (len / 2).floor();
-      final first = String.fromCharCodes(trimmed.runes.take(mid));
-      final second = String.fromCharCodes(trimmed.runes.skip(mid));
-      return WordPair(first, second);
-    } else {
-      return WordPair(trimmed, '项目');
-    }
-  }
-
   // 新增：直接使用生成的字符串列表更新候选项
   void updateCandidates(List<String> names) {
-    state = names.map((name) => WordPairModel(wordPair: _toWordPair(name))).toList();
+    state = names.map((name) => WordPairModel(wordPair: NameFormatter.toWordPair(name))).toList();
     print('✅ 候选列表已更新，包含 ${state.length} 个名称');
   }
 

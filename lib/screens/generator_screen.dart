@@ -364,64 +364,71 @@ ${keyword.isNotEmpty ? '关键词/Keywords: $keyword' : ''}
                           ],
                         ),
                         const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: _selectedEngine == 'local' 
-                                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                                      : Colors.transparent,
-                                  border: Border.all(
-                                    color: _selectedEngine == 'local' 
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                                    width: 2,
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            return Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                SizedBox(
+                                  width: constraints.maxWidth > 480 ? (constraints.maxWidth / 2) - 6 : double.infinity,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: _selectedEngine == 'local' 
+                                          ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                          : Colors.transparent,
+                                      border: Border.all(
+                                        color: _selectedEngine == 'local' 
+                                            ? Theme.of(context).colorScheme.primary
+                                            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: RadioListTile<String>(
+                                      title: const Text('本地引擎'),
+                                      subtitle: const Text('快速、离线'),
+                                      value: 'local',
+                                      groupValue: _selectedEngine,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedEngine = value!;
+                                        });
+                                      },
+                                    ),
                                   ),
                                 ),
-                                child: RadioListTile<String>(
-                                  title: const Text('本地引擎'),
-                                  subtitle: const Text('快速、离线'),
-                                  value: 'local',
-                                  groupValue: _selectedEngine,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedEngine = value!;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: _selectedEngine == 'ai' 
-                                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                                      : Colors.transparent,
-                                  border: Border.all(
-                                    color: _selectedEngine == 'ai' 
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                                    width: 2,
+                                SizedBox(
+                                  width: constraints.maxWidth > 480 ? (constraints.maxWidth / 2) - 6 : double.infinity,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: _selectedEngine == 'ai' 
+                                          ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+                                          : Colors.transparent,
+                                      border: Border.all(
+                                        color: _selectedEngine == 'ai' 
+                                            ? Theme.of(context).colorScheme.primary
+                                            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: RadioListTile<String>(
+                                      title: const Text('AI引擎'),
+                                      subtitle: const Text('智能、多样'),
+                                      value: 'ai',
+                                      groupValue: _selectedEngine,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedEngine = value!;
+                                        });
+                                      },
+                                    ),
                                   ),
                                 ),
-                                child: RadioListTile<String>(
-                                  title: const Text('AI引擎'),
-                                  subtitle: const Text('智能、多样'),
-                                  value: 'ai',
-                                  groupValue: _selectedEngine,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedEngine = value!;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
