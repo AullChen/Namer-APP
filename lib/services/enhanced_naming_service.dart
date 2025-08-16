@@ -166,7 +166,7 @@ class EnhancedNamingService extends StateNotifier<AsyncValue<List<String>>> {
     switch (languageCode) {
       case 'zh':
         if (cleanPrompt.length <= 6) {
-          return '${cleanPrompt}助手';
+          return '$cleanPrompt助手';
         } else {
           return '智能${cleanPrompt.substring(0, 4)}';
         }
@@ -285,7 +285,7 @@ class EnhancedNamingService extends StateNotifier<AsyncValue<List<String>>> {
     for (int i = 0; i < count; i++) {
       final template = baseTemplates[i % baseTemplates.length];
       final name = template.replaceAll('{prompt}', prompt.isEmpty ? '智能项目' : prompt)
-                          .replaceAll('{index}', '${i + 1}');
+                          .replaceAll('{index}', (i + 1).toString());
       names.add(name);
     }
     
@@ -355,6 +355,7 @@ class EnhancedNamingService extends StateNotifier<AsyncValue<List<String>>> {
 
   /// 基于关键词生成名称
   String _generateByKeywords(Map<String, List<String>> resources, List<String> keywords, String languageCode) {
+    if (keywords.isEmpty) return '';
     final keyword = keywords[_random.nextInt(keywords.length)];
     
     // 查找与关键词相关的前缀和后缀
@@ -449,16 +450,16 @@ class EnhancedNamingService extends StateNotifier<AsyncValue<List<String>>> {
   /// 智能回退生成
   String _generateSmartFallback(String prompt, String languageCode, int index) {
     final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(8);
-    final suffix = index > 0 ? '${index + 1}' : timestamp;
+    final suffix = index > 0 ? (index + 1).toString() : timestamp;
     
     if (prompt.isNotEmpty) {
       switch (languageCode) {
         case 'zh':
-          return prompt.length > 10 ? '智能项目$suffix' : '$prompt项目$suffix';
+          return prompt.length > 10 ? '智能项目$suffix' : '${prompt}项目$suffix';
         case 'ja':
-          return prompt.length > 10 ? 'スマートプロジェクト$suffix' : '$promptプロジェクト$suffix';
+          return prompt.length > 10 ? 'スマートプロジェクト$suffix' : '${prompt}プロジェクト$suffix';
         case 'ko':
-          return prompt.length > 10 ? '스마트프로젝트$suffix' : '$prompt프로젝트$suffix';
+          return prompt.length > 10 ? '스마트프로젝트$suffix' : '${prompt}프로젝트$suffix';
         default:
           return prompt.length > 20 ? 'SmartProject$suffix' : '${prompt.capitalize()}Project$suffix';
       }

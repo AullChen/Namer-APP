@@ -207,11 +207,8 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
     try {
       print('🔄 开始更新当前名称: $name');
       
-      // 方法1：直接更新状态
+      // 直接更新状态，不再污染搜索关键词
       ref.read(currentWordPairProvider.notifier).updateWithName(name);
-      
-      // 方法2：同时更新搜索关键词
-      ref.read(searchKeywordProvider.notifier).state = name;
       
       print('✅ 当前名称更新完成');
     } catch (e) {
@@ -222,8 +219,8 @@ class _GeneratorScreenState extends ConsumerState<GeneratorScreen> {
   // 更新候选名称列表
   Future<void> _updateCandidateNames(List<String> names) async {
     try {
-      // 重新生成候选名称
-      await ref.read(candidatesProvider.notifier).generateCandidates(count: names.length);
+      // 直接使用已生成的名称列表更新候选项
+      ref.read(candidatesProvider.notifier).updateCandidates(names);
     } catch (e) {
       print('⚠️ 更新候选名称失败: $e');
     }
@@ -745,8 +742,8 @@ ${keyword.isNotEmpty ? '关键词/Keywords: $keyword' : ''}
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 200),
+                    SizedBox(
+                      height: 200,
                       child: CandidateList(
                         onRefresh: _generateName,
                         onSelect: (index) {
