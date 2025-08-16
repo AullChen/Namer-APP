@@ -1,42 +1,16 @@
-# 贡献指南
+# 贡献指北
 
-感谢您对 Namer APP 项目的关注！我们欢迎所有形式的贡献，包括但不限于：
+非常感谢您对我们的项目感兴趣！我们欢迎任何形式的贡献，无论是报告错误、提出功能建议，还是提交代码，或者**单纯只是想整活、加点自己喜欢的东西**。
 
-- 🐛 Bug 报告
-- 💡 功能建议
-- 📝 文档改进
-- 🔧 代码贡献
-- 🎨 UI/UX 设计
-- 🌐 翻译工作
+## 📝 行为准则
 
-## 🚀 快速开始
+为了营造一个开放和友好的环境，我们采用了贡献者行为准则。请花时间阅读并遵守 [Code of Conduct](CODE_OF_CONDUCT.md)（如你所见，这像滚木一样并不存在。所以其实你可以为所欲为，前提是不要破坏我们开放而友好的环境）。
 
-### 环境准备
+## 💡 如何贡献
 
-1. **安装 Flutter SDK**
-   ```bash
-   # 下载并安装 Flutter SDK
-   # 详见：https://flutter.dev/docs/get-started/install
-   ```
+### 报告错误 (Bug Reports)
 
-2. **验证环境**
-   ```bash
-   flutter doctor
-   ```
-
-3. **Fork 并克隆项目**
-   ```bash
-   git clone https://github.com/AullChen/Namer-APP.git
-   cd namer-app
-   flutter pub get
-   ```
-
-## 📋 贡献类型
-
-### Bug 报告
-
-如果您发现了 Bug，请：
-
+如果您发现了一个错误，请：
 1. 检查 [Issues](https://github.com/AullChen/Namer-APP/issues) 确认问题未被报告
 2. 使用 Bug 报告模板创建新 Issue
 3. 提供详细的复现步骤和环境信息
@@ -67,10 +41,9 @@
 如果适用，请添加截图帮助解释问题
 ```
 
-### 功能建议
+### 功能建议 (Feature Requests)
 
-提出新功能建议时，请：
-
+如果您有新的功能想法，也请：
 1. 检查现有 Issues 避免重复
 2. 详细描述功能需求和使用场景
 3. 考虑功能的可行性和必要性
@@ -93,40 +66,33 @@
 添加任何其他相关信息或截图
 ```
 
-## 💻 代码贡献
+### 提交代码 (Pull Requests)
 
-### 开发流程
+我们非常欢迎您通过 Pull Request (PR) 来贡献代码。请遵循以下步骤：
 
-1. **创建分支**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
+1.  **Fork 仓库**：将项目 Fork 到您自己的 GitHub 账户下。
+2.  **创建分支**：从 `main` 分支创建一个新的特性分支（例如 `feature/amazing-new-feature`）或修复分支（例如 `fix/bug-in-widget`）。
+3.  **进行修改**：在您的分支上进行代码修改。
+    - 遵循项目现有的编码风格和结构。（不遵循也行）
+    - 确保您的代码通过了 `flutter analyze` 的检查。
+    - 如果您添加了新功能，请考虑为其编写测试。
+4.  **提交更改**：使用清晰的、描述性的提交信息来提交您的更改。
+5.  **创建 Pull Request**：将您的分支推送到您 Fork 的仓库，并创建一个指向原始仓库 `main` 分支的 Pull Request。
+    - 在 PR 的描述中，清晰地说明您做了什么以及为什么这么做。
+    - 如果您的 PR 解决了某个 Issue，请在描述中链接它（例如 `Closes #123`）。
 
-2. **编写代码**
-   - 遵循项目的代码规范
-   - 添加必要的注释
-   - 编写或更新测试
+### 或者任何你喜欢的方式 (Anything U Like)
 
-3. **测试代码**
-   ```bash
-   flutter test
-   flutter analyze
-   ```
+在这里为所欲为——违法的东西除外。
 
-4. **提交更改**
-   ```bash
-   git add .
-   git commit -m "feat: add amazing feature"
-   ```
+## 💻 开发设置
 
-5. **推送分支**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
+1.  确保您已安装并配置好 [Flutter](httpss://flutter.dev/docs/get-started/install)。
+2.  克隆您 Fork 的仓库并进入项目目录。
+3.  运行 `flutter pub get` 安装依赖。
+4.  运行 `flutter run` 启动应用。
 
-6. **创建 Pull Request**
-
-### 代码规范
+## 📋 代码规范（凑字数的）
 
 #### Dart 代码风格
 
@@ -224,135 +190,13 @@ void main() {
 }
 ```
 
-## 📝 文档贡献
-
-### 文档类型
-
-- **README.md**: 项目介绍和快速开始
-- **API 文档**: 代码注释和 dartdoc
-- **用户指南**: 详细使用说明
-- **开发文档**: 架构设计和开发指南
-
-### 文档规范
-
-- 使用清晰的标题层级
-- 提供代码示例
-- 包含必要的截图
-- 保持内容更新
-
-## 🎨 设计贡献
-
-### UI/UX 设计
-
-- 遵循 Material Design 3 规范
-- 保持设计一致性
-- 考虑无障碍访问
-- 提供设计稿和原型
-
-### 图标和插图
-
-- 使用 SVG 格式
-- 保持风格统一
-- 提供多种尺寸
-- 遵循版权要求
-
-## 🌐 翻译贡献
-
-### 支持的语言
-
-- 中文（简体）- 主要语言
-- English - 计划中
-- 日本語 - 计划中
-
-### 翻译流程
-
-1. 检查现有翻译文件
-2. 添加或更新翻译内容
-3. 测试翻译效果
-4. 提交 Pull Request
-
-## 📋 Pull Request 指南
-
-### PR 标题格式
-
-使用 [Conventional Commits](https://conventionalcommits.org/) 格式：
-
-- `feat: 添加新功能`
-- `fix: 修复 Bug`
-- `docs: 更新文档`
-- `style: 代码格式调整`
-- `refactor: 代码重构`
-- `test: 添加测试`
-- `chore: 构建或辅助工具变动`
-
-### PR 描述模板
-
-```markdown
-## 变更类型
-- [ ] Bug 修复
-- [ ] 新功能
-- [ ] 文档更新
-- [ ] 代码重构
-- [ ] 性能优化
-
-## 变更描述
-简要描述此次变更的内容和原因
-
-## 测试
-- [ ] 已添加单元测试
-- [ ] 已添加集成测试
-- [ ] 手动测试通过
-
-## 截图
-如果涉及 UI 变更，请提供截图
-
-## 检查清单
-- [ ] 代码遵循项目规范
-- [ ] 已更新相关文档
-- [ ] 所有测试通过
-- [ ] 已自测功能
-```
-
-## 🏷️ 版本发布
-
-### 版本号规则
-
-遵循 [Semantic Versioning](https://semver.org/)：
-
-- `MAJOR.MINOR.PATCH`
-- `1.0.0` - 主要版本
-- `1.1.0` - 次要版本（新功能）
-- `1.1.1` - 补丁版本（Bug 修复）
-
-### 发布流程
-
-1. 更新版本号
-2. 更新 CHANGELOG.md
-3. 创建 Release Tag
-4. 发布到各平台
-
-## 🤝 社区准则
-
-### 行为准则
-
-- 尊重所有贡献者
-- 保持友善和专业
-- 欢迎新手参与
-- 提供建设性反馈
-
-### 沟通渠道
-
-- **GitHub Issues**: Bug 报告和功能建议
-- **GitHub Discussions**: 一般讨论和问答
-- **Pull Requests**: 代码审查和讨论
-
 ## 🎖️ 贡献者认可
 
 我们会在以下地方认可贡献者：
 
-- README.md 贡献者列表
-- 发布说明中的致谢
-- 项目网站的贡献者页面
+- README.md 贡献者列表（请在PR时顺便加上去，或者为此单独提一个PR——你的贡献可以只是为README增加了一个contributor）
+- 发布说明中的致谢（如果有的话）
+- 项目网站的贡献者页面（如果存在的话）
 
 ## 📞 联系方式
 
@@ -363,4 +207,4 @@ void main() {
 
 ---
 
-再次感谢您的贡献！每一个贡献都让 Namer APP 变得更好。🚀
+再次感谢您的贡献！每一个贡献都让 Namer APP 变得更好（或者坏？）。🚀
