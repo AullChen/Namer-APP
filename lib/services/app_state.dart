@@ -77,15 +77,42 @@ class CurrentWordPairNotifier extends StateNotifier<WordPairModel> {
     }
   }
 
-  // 新增：直接更新名称的方法
+  // 新增：直接更新名称的方法（修复：将传入的名称映射到 WordPair 而非随机）
   void updateWithName(String name) {
     print('🔄 直接更新名称: $name');
-    // 使用WordPair.random()然后通过其他方式处理名称显示
-    final newPair = WordPair.random();
+
+    WordPair toWordPair(String s) {
+      final trimmed = s.trim();
+      if (trimmed.isEmpty) {
+        return WordPair.random();
+      }
+      // 优先用分隔符切分（英文/多词情况）
+      final parts = trimmed.split(RegExp(r'[\\s_\\-]+')).where((e) => e.isNotEmpty).toList();
+      if (parts.length >= 2) {
+        final first = parts.first;
+        final second = parts.sublist(1).join('');
+        return WordPair(first, second);
+      }
+      // 中文或单词情况：长度>=4拆半，否则用占位后缀
+      if (trimmed.runes.length >= 4) {
+        final len = trimmed.runes.length;
+        final mid = (len / 2).floor();
+        final first = String.fromCharCodes(trimmed.runes.take(mid));
+        final second = String.fromCharCodes(trimmed.runes.skip(mid));
+        return WordPair(first, second);
+      } else {
+        // 短名称用固定后缀，避免随机带来不确定性
+        return WordPair(trimmed, '项目');
+      }
+    }
+
+    final newPair = toWordPair(name);
     state = WordPairModel(wordPair: newPair);
-    // 同时更新搜索关键词来反映实际名称
-    _ref.read(searchKeywordProvider.notifier).state = name;
-    print('✅ 状态已更新，名称: $name');
+
+    // 不要用生成结果污染搜索关键词
+    // _ref.read(searchKeywordProvider.notifier).state = name;
+
+    print('✅ 状态已更新，名称: $name -> (${newPair.first}, ${newPair.second})');
   }
 
   void _generateTraditionalPair() {
@@ -294,6 +321,37 @@ class CandidatesNotifier extends StateNotifier<List<WordPairModel>> {
 
   CandidatesNotifier(this._ref) : super([]) {
     generateCandidates();
+  }
+
+  // 辅助方法：将字符串转换为WordPair
+  WordPair _toWordPair(String s) {
+    final trimmed = s.trim();
+    if (trimmed.isEmpty) {
+      return WordPair('无效', '名称');
+    }
+    // 优先用分隔符切分
+    final parts = trimmed.split(RegExp(r'[\s_\-]+')).where((e) => e.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      final first = parts.first;
+      final second = parts.sublist(1).join('');
+      return WordPair(first, second);
+    }
+    // 中文或单词情况
+    if (trimmed.runes.length >= 4) {
+      final len = trimmed.runes.length;
+      final mid = (len / 2).floor();
+      final first = String.fromCharCodes(trimmed.runes.take(mid));
+      final second = String.fromCharCodes(trimmed.runes.skip(mid));
+      return WordPair(first, second);
+    } else {
+      return WordPair(trimmed, '项目');
+    }
+  }
+
+  // 新增：直接使用生成的字符串列表更新候选项
+  void updateCandidates(List<String> names) {
+    state = names.map((name) => WordPairModel(wordPair: _toWordPair(name))).toList();
+    print('✅ 候选列表已更新，包含 ${state.length} 个名称');
   }
 
   Future<void> generateCandidates({int count = 5}) async {
