@@ -5,6 +5,11 @@ import 'package:flutter_application_1/services/language_service.dart';
 import 'package:flutter_application_1/services/ai_api_service.dart';
 import 'package:flutter_application_1/screens/ai_config_screen.dart';
 import 'package:flutter_application_1/widgets/category_manager.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+final packageInfoProvider = FutureProvider<PackageInfo>((ref) {
+  return PackageInfo.fromPlatform();
+});
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -15,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final preferences = ref.watch(preferencesProvider);
     final languageState = ref.watch(languageServiceProvider);
     final aiState = ref.watch(aiApiServiceProvider);
+    final packageInfoAsync = ref.watch(packageInfoProvider);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -296,22 +302,37 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     
-                    ListTile(
-                      leading: const Icon(Icons.info_outline),
-                      title: const Text('应用版本'),
-                      subtitle: const Text('2.0.0'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        showAboutDialog(
-                          context: context,
-                          applicationName: '智能名称生成器',
-                          applicationVersion: '2.0.0',
-                          applicationIcon: const Icon(Icons.auto_awesome, size: 48),
-                          children: const [
-                            Text('一个智能的名称生成工具，支持多语言和AI生成，帮助您为项目、产品或创意找到完美的名称。'),
-                          ],
+                    packageInfoAsync.when(
+                      data: (info) {
+                        final version = info.version;
+                        return ListTile(
+                          leading: const Icon(Icons.info_outline),
+                          title: const Text('应用版本'),
+                          subtitle: Text(version),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            showAboutDialog(
+                              context: context,
+                              applicationName: '智能名称生成器',
+                              applicationVersion: version,
+                              applicationIcon: const Icon(Icons.auto_awesome, size: 48),
+                              children: const [
+                                Text('一个智能的名称生成工具，支持多语言和AI生成，帮助您为项目、产品或创意找到（并不）完美的名称。'),
+                              ],
+                            );
+                          },
                         );
                       },
+                      loading: () => const ListTile(
+                        leading: Icon(Icons.info_outline),
+                        title: Text('应用版本'),
+                        subtitle: Text('加载中...'),
+                      ),
+                      error: (e, s) => ListTile(
+                        leading: const Icon(Icons.error_outline),
+                        title: const Text('应用版本'),
+                        subtitle: const Text('无法加载版本信息'),
+                      ),
                     ),
                     
                     const Divider(),
@@ -323,7 +344,7 @@ class SettingsScreen extends ConsumerWidget {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('帮助页面开发中...')),
+                          const SnackBar(content: Text('帮助页面开发中...你可以想怎么用就怎么用')),
                         );
                       },
                     ),
@@ -337,7 +358,7 @@ class SettingsScreen extends ConsumerWidget {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('反馈功能开发中...')),
+                          const SnackBar(content: Text('告诉了也没用，所以还是不要浪费时间了')),
                         );
                       },
                     ),
